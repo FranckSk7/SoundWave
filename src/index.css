@@ -1,0 +1,143 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Playfair+Display:wght@700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-bg: #0a0a0a;
+  --color-surface: #121212;
+  --color-surface-2: #1a1a1a;
+  --color-surface-hover: #2a2a2a;
+  --color-popup: #282828;
+  --color-green: #1DB954;
+  --color-green-light: #1ed760;
+  --color-text: #ffffff;
+  --color-muted: #a7a7a7;
+  --color-subtle: #535353;
+  --color-gold: #f59e0b;
+  --player-height: 90px;
+  --nav-height: 60px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { font-size: 16px; }
+
+body {
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overscroll-behavior: none;
+}
+
+#root { min-height: 100vh; width: 100%; }
+
+/* Scrollbar Spotify */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--color-subtle); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-muted); }
+
+/* Range input (slider) */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+}
+input[type="range"]::-webkit-slider-track {
+  background: var(--color-surface-hover);
+  height: 4px;
+  border-radius: 2px;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: white;
+  margin-top: -4px;
+  opacity: 0;
+  transition: opacity .15s;
+}
+.group:hover input[type="range"]::-webkit-slider-thumb,
+input[type="range"]:focus::-webkit-slider-thumb {
+  opacity: 1;
+}
+
+/* Progress bar custom */
+.progress-track {
+  position: relative;
+  height: 4px;
+  background: var(--color-surface-hover);
+  border-radius: 2px;
+  cursor: pointer;
+}
+.progress-track:hover { height: 6px; }
+.progress-fill {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  background: white;
+  border-radius: 2px;
+  transition: width .1s linear;
+  pointer-events: none;
+}
+.progress-track:hover .progress-fill { background: var(--color-green); }
+
+/* Animations */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes equalizerBar {
+  0%, 100% { transform: scaleY(.3); }
+  50% { transform: scaleY(1); }
+}
+@keyframes pulse-ring {
+  0% { transform: scale(.95); box-shadow: 0 0 0 0 rgba(29,185,84,.5); }
+  70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(29,185,84,0); }
+  100% { transform: scale(.95); box-shadow: 0 0 0 0 rgba(29,185,84,0); }
+}
+
+.equalizer-bar {
+  width: 3px;
+  background: var(--color-green);
+  border-radius: 1px;
+  transform-origin: bottom;
+  animation: equalizerBar 1s ease-in-out infinite;
+}
+.equalizer-bar:nth-child(2) { animation-delay: .15s; }
+.equalizer-bar:nth-child(3) { animation-delay: .3s; }
+.equalizer-bar:nth-child(4) { animation-delay: .1s; }
+
+.animate-fade-up { animation: fadeUp .35s ease both; }
+.animate-fade-in { animation: fadeIn .25s ease both; }
+
+/* iOS safe area */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+}
+
+/* Gradient overlays */
+.gradient-to-bg {
+  background: linear-gradient(to bottom, transparent 0%, var(--color-bg) 100%);
+}
+
+/* Touch highlight remove */
+* { -webkit-tap-highlight-color: transparent; }
+
+/* Text gradient camerounais */
+.text-cameroun {
+  background: linear-gradient(135deg, #007a5e, #fcd116, #ce1126);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
