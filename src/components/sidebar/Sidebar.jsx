@@ -5,10 +5,11 @@ import { getUserPlaylists } from '../../services/playlistService'
 import { subscribeToPublicPlaylists, unsubscribe } from '../../services/playlistService'
 import { useAuth } from '../../hooks/useAuth'
 import usePlayerStore from '../../store/playerStore'
+import UploadSong from '../UploadSong'
 
 // ── Icônes ────────────────────────────────────────────────────────────────────
 const Icons = {
-  Home:     ({ filled }) => filled
+  Home:      ({ filled }) => filled
     ? <svg viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
     : <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>,
   Search:  ({ filled }) => filled
@@ -21,10 +22,11 @@ const Icons = {
   Plus:    () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-4 h-4"><path d="M12 5v14M5 12h14"/></svg>,
   Note:    () => <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>,
   Dot:     () => <span className="w-1.5 h-1.5 rounded-full bg-sw-green flex-shrink-0 mt-0.5" />,
+  Upload:  () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>,
 }
 
 const navItems = [
-  { to: '/',        label: 'Accueil',         icon: Icons.Home },
+  { to: '/',        label: 'Accueil',       icon: Icons.Home },
   { to: '/search',  label: 'Rechercher',      icon: Icons.Search },
   { to: '/library', label: 'Ma bibliothèque', icon: Icons.Library },
   { to: '/community', label: 'Communauté',    icon: Icons.Globe },
@@ -35,8 +37,11 @@ export default function Sidebar() {
   const { profile } = useAuth()
   const { currentSong, isPlaying } = usePlayerStore()
   const [newPlaylists, setNewPlaylists] = useState([])
+  
+  // État local pour afficher/masquer la fenêtre d'upload
+  const [showUploadModal, setShowUploadModal] = useState(false)
 
-  // CORRIGÉ : On passe explicitement le profile.id et on n'exécute la requête que s'il est chargé
+  // On passe explicitement le profile.id et on n'exécute la requête que s'il est chargé
   const { data: playlists = [] } = useQuery({
     queryKey: ['playlists', profile?.id],
     queryFn: () => getUserPlaylists(profile?.id),
@@ -47,7 +52,6 @@ export default function Sidebar() {
   // ── Realtime : nouvelles playlists publiques d'autres users ─────
   useEffect(() => {
     const channel = subscribeToPublicPlaylists((playlist) => {
-      // Ne montrer que les playlists des autres
       const userId = profile?.id
       if (playlist.user_id !== userId) {
         setNewPlaylists(prev => {
@@ -63,7 +67,7 @@ export default function Sidebar() {
   const avatarInitial = profile?.username?.[0]?.toUpperCase() || profile?.full_name?.[0]?.toUpperCase() || '?'
 
   return (
-    <div className="flex flex-col h-full bg-sw-bg select-none overflow-hidden">
+    <div className="flex flex-col h-full bg-sw-bg select-none overflow-hidden relative">
 
       {/* ── Logo ── */}
       <div className="px-6 py-5 flex-shrink-0">
@@ -96,6 +100,15 @@ export default function Sidebar() {
             )}
           </NavLink>
         ))}
+
+        {/* ── NOUVEAU : Bouton pour ouvrir la modale d'upload de son ── */}
+        <button
+          onClick={() => setShowUploadModal(true)}
+          className="w-full flex items-center gap-4 px-3 py-2.5 rounded-lg transition-all duration-150 font-semibold text-sm text-sw-muted hover:text-sw-green hover:bg-sw-surface/50 text-left mt-1"
+        >
+          <Icons.Upload />
+          Ajouter un son
+        </button>
       </nav>
 
       <hr className="border-white/5 mx-4 my-3" />
@@ -215,6 +228,24 @@ export default function Sidebar() {
               <p className="text-xs text-sw-subtle truncate">Voir le profil</p>
             </div>
           </NavLink>
+        </div>
+      )}
+
+      {/* ── NOUVEAU : Fenêtre Modale d'upload en surcouche (Overlay) ── */}
+      {showUploadModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+          <div className="bg-[#121212] border border-white/10 w-full max-w-md rounded-xl p-6 shadow-2xl relative animate-in fade-in zoom-in-95 duration-150">
+            {/* Bouton de fermeture de la modale */}
+            <button 
+              onClick={() => setShowUploadModal(false)}
+              className="absolute top-4 right-4 text-sw-muted hover:text-white text-xl font-bold transition-colors w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/5"
+            >
+              ✕
+            </button>
+            
+            {/* Injection du formulaire d'upload */}
+            <UploadSong onClose={() => setShowUploadModal(false)} />
+          </div>
         </div>
       )}
     </div>

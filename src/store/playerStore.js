@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { supabase } from '../services/supabase' // 👈 Assure-toi que ce chemin vers ton client Supabase est correct
 
 const usePlayerStore = create(
   persist(
@@ -15,6 +16,7 @@ const usePlayerStore = create(
       queue: [],
       queueIndex: 0,
       playlistContext: null, // id de la playlist en cours
+      likedSongs: [], // 👈 1. État initial pour stocker tes morceaux likés
 
       playSong: (song, queue = null, index = 0) => {
         const newQueue = queue || get().queue
@@ -70,9 +72,76 @@ const usePlayerStore = create(
           : { song: queue[queue.length - 1], index: queue.length - 1 }
         set({ currentSong: prev.song, queueIndex: prev.index, currentTime: 0, isPlaying: true })
       },
+
+      // 👈 2. Charge les chansons likées depuis Supabase au démarrage
+      fetchLikedSongs: async (userId) => {
+        if (!userId) return
+        try {
+          const { data, error } = await supabase
+            .from('liked_songs')
+            .select(`
+              song_id,
+              songs (*)
+            `) // Récupère le morceau lié grâce à la clé étrangère song_id
+            .eq('user_id', userId)
+
+          if (error) throw error
+
+          // On extrait uniquement les objets "songs" complets
+          const songs = data.map((item) => item.songs).filter(Boolean)
+          set({ likedSongs: songs })
+        } catch (error) {
+          console.error("Erreur fetchLikedSongs:", error.message)
+        }
+      },
+
+      // 👈 3. Ajoute ou supprime un Like au clic sur le cœur
+      toggleLike: async (songId, userId) => {
+        if (!userId) return alert("Connectez-vous pour aimer un morceau !")
+        
+        const { likedSongs } = get()
+        const isLiked = likedSongs.some((song) => song.id === songId)
+
+        try {
+          if (isLiked) {
+            // Déjà liké -> On le retire de Supabase
+            const { error } = await supabase
+              .from('liked_songs')
+              .delete()
+              .eq('user_id', userId)
+              .eq('song_id', songId)
+
+            if (error) throw error
+
+            // UI : On filtre pour l'enlever de l'affichage immédiatement
+            set({ likedSongs: likedSongs.filter((song) => song.id !== songId) })
+          } else {
+            // Pas encore liké -> On l'ajoute dans Supabase
+            const { error } = await supabase
+              .from('liked_songs')
+              .insert([{ user_id: userId, song_id: songId }])
+
+            if (error) throw error
+
+            // On récupère les infos du morceau pour l'ajouter proprement à notre état local
+            const { data: songData } = await supabase
+              .from('songs')
+              .select('*')
+              .eq('id', songId)
+              .single()
+
+            if (songData) {
+              set({ likedSongs: [...likedSongs, songData] })
+            }
+          }
+        } catch (error) {
+          console.error("Erreur toggleLike:", error.message)
+        }
+      },
     }),
     {
       name: 'sw-player',
+      // On ne sauvegarde dans le stockage local du navigateur que les réglages du lecteur (pas la liste des likes qui vient de Supabase)
       partialize: (s) => ({ volume: s.volume, isMuted: s.isMuted, isShuffle: s.isShuffle, repeatMode: s.repeatMode }),
     }
   )
